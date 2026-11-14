@@ -1,0 +1,103 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: oo
+      runOnChange: true
+      changes:
+        - createTable:
+            tableName: exchange_rate_providers
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: priority
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 2
+      author: oo
+      changes:
+        - createTable:
+            tableName: exchange_rates
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: code
+                  type: varchar(3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rate
+                  type: NUMERIC(19, 6)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 3
+      author: oo
+      runOnChange: true
+      changes:
+        - createTable:
+            tableName: rate_update_history
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: provider_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_rate_update_history_provider
+                    references: exchange_rate_providers(id)
+              - column:
+                  name: at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timestamp
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: success
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 4
+      author: oo
+      changes:
+        - addUniqueConstraint:
+            tableName: exchange_rates
+            constraintName: uq_exchange_rates_at_code
+            columnNames: 'at, code'

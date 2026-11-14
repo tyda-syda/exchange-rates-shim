@@ -1,0 +1,33 @@
+spring:
+  jackson:
+    default-property-inclusion: non_null
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/shipmonk-exchange-rates
+    username: shipmonk
+    password: secret
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+exchange:
+  rates:
+    events:
+      type: kafka
+      kafka:
+        rates-provider-topic: rates-provider-events
+    update-cron: '0 0 0 * * ?' # 12 AM every day
+    providers:
+      http-timeout-sec: 5
+      fixer:
+        latest-url: https://data.fixer.io/api/latest
+        date-url: https://data.fixer.io/api
+        api-key: -- YOUR-SUPER-SECRET-API-KEY --
+        base-currency: EUR
