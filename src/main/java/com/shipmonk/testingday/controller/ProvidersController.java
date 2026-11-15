@@ -1,6 +1,5 @@
 package com.shipmonk.testingday.controller;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,7 +41,7 @@ public class ProvidersController {
 
     private Response.ResponseBuilder makeResponse() {
         return Response.builder()
-            .timestamp(LocalDateTime.now())
+            .timestamp(System.currentTimeMillis())
             .success(true);
     }
 

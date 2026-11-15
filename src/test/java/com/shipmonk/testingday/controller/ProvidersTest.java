@@ -44,7 +44,7 @@ class ProvidersTest extends BaseTest {
         when(providerRepo.findByName("unknown")).thenReturn(Optional.empty());
 
         mockMvc.perform(put("/api/v1/providers/{name}/disable", "unknown"))
-            .andExpect(status().isBadGateway())
+            .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.success").value(false))
             .andExpect(jsonPath("$.error.message").value("Provider [unknown] not found"));
     }

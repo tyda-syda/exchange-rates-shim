@@ -69,7 +69,7 @@ public class FixerProvider implements RatesProvider {
             .timeout(ofSeconds(readTimeout))
             .build();
 
-        log.debug("Provider [{}] fetching latest rates at [{}]", getName(), fixerRatesDateUrl);
+        log.debug("Provider [{}] fetching latest rates at [{}]", getName(), fixerRatesLatestUrl);
         return toProviderRates(execRequest(request));
     }
 

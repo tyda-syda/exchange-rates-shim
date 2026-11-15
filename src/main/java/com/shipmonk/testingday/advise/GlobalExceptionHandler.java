@@ -1,7 +1,6 @@
 package com.shipmonk.testingday.advise;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -66,7 +65,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Response> handleRateNotFound(RatesNotFoundException ex) {
         return respond(
             HttpStatus.NOT_FOUND,
-            "Rates are bot available",
+            "Rates are not available",
             ex,
             ErrorType.INTERNAL
         );
@@ -90,7 +89,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ProviderRateNotFoundException.class)
     public ResponseEntity<Response> handleProviderRateNotFound(ProviderRateNotFoundException ex) {
         return respond(
-            HttpStatus.BAD_GATEWAY,
+            HttpStatus.NOT_FOUND,
             ex.getMessage(),
             ex,
             ErrorType.INTERNAL
@@ -207,7 +206,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private Response buildResponse(String message, ErrorType errorType) {
         return Response.builder()
             .success(false)
-            .timestamp(LocalDateTime.now())
+            .timestamp(System.currentTimeMillis())
             .error(
                 ErrorResponse.builder()
                     .code(errorType.getCode())

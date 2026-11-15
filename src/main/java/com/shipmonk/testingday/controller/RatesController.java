@@ -3,7 +3,6 @@ package com.shipmonk.testingday.controller;
 import static com.shipmonk.testingday.utils.Consts.DATE_FORMAT;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,7 +42,7 @@ public class RatesController {
     private Response toResponse(RatesSnapshot snapshot) {
         return Response.builder()
             .success(true)
-            .timestamp(LocalDateTime.now())
+            .timestamp(System.currentTimeMillis())
             .base(snapshot.base())
             .rates(snapshot.rates())
             .build();

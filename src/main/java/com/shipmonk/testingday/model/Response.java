@@ -1,7 +1,6 @@
 package com.shipmonk.testingday.model;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class Response {
 
     private Boolean success;
-    private LocalDateTime timestamp;
+    private long timestamp;
     private ErrorResponse error;
     private String base;
     private Map<String, BigDecimal> rates;

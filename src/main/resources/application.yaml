@@ -36,5 +36,5 @@ exchange:
       fixer:
         latest-url: https://data.fixer.io/api/latest
         date-url: https://data.fixer.io/api
-        api-key: -- YOUR-SUPER-SECRET-API-KEY --
+        api-key: ${FIXER_API_KEY}
         base-currency: EUR
