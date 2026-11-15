@@ -90,6 +90,9 @@ databaseChangeLog:
                   type: BOOLEAN
                   constraints:
                     nullable: false
+              - column:
+                  name: base
+                  type: VARCHAR(3)
 
   - changeSet:
       id: 4

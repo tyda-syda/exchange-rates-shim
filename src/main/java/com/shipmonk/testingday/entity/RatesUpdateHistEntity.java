@@ -40,4 +40,7 @@ public class RatesUpdateHistEntity {
     @Column(nullable = false)
     private Boolean success;
 
+    @Column(length = 3)
+    private String base;
+
 }

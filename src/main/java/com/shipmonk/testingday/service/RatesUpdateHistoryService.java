@@ -28,11 +28,12 @@ public class RatesUpdateHistoryService {
     private Long minIntervalRatesUpdate;
 
     @Transactional
-    public void saveHistSuccess(String providerName, LocalDateTime at, LocalDateTime timestamp) {
+    public void saveHistSuccess(String providerName, String base, LocalDateTime at, LocalDateTime timestamp) {
         historyRepo.save(
             RatesUpdateHistEntity.builder()
                 .provider(providerService.getProviderEntity(providerName))
                 .success(true)
+                .base(base)
                 .at(at)
                 .timestamp(timestamp)
                 .build()

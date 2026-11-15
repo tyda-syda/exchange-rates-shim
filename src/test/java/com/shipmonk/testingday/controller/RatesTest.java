@@ -21,26 +21,30 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import com.shipmonk.testingday.entity.RateEntity;
+import com.shipmonk.testingday.entity.RatesUpdateHistEntity;
+import com.shipmonk.testingday.providers.api.ProviderRates;
 
 class RatesTest extends BaseTest {
 
     private static final LocalDateTime AT = LocalDateTime.of(2024, 1, 15, 10, 0);
+    private static final String BASE = "EUR";
 
     @Test
     void getRates_returnsLatestCachedRates() throws Exception {
-        when(rateRepo.findLatest()).thenReturn(Optional.of(rate("USD", "1.1")));
+        when(historyRepo.findLatest()).thenReturn(Optional.of(snapshot()));
         when(rateRepo.findAllByAt(AT)).thenReturn(List.of(rate("USD", "1.1"), rate("GBP", "0.85")));
 
         mockMvc.perform(get("/api/v1/rates"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.base").value(BASE))
             .andExpect(jsonPath("$.rates.USD").value(1.1))
             .andExpect(jsonPath("$.rates.GBP").value(0.85));
     }
 
     @Test
     void getRates_filtersByRequestedCodes() throws Exception {
-        when(rateRepo.findLatest()).thenReturn(Optional.of(rate("USD", "1.1")));
+        when(historyRepo.findLatest()).thenReturn(Optional.of(snapshot()));
         when(rateRepo.findAllByAt(AT, Set.of("USD"))).thenReturn(List.of(rate("USD", "1.1")));
 
         mockMvc.perform(get("/api/v1/rates").param("codes", "usd"))
@@ -52,17 +56,18 @@ class RatesTest extends BaseTest {
     @Test
     void getRatesForDate_notCached_fetchesFromProviderAndStores() throws Exception {
         LocalDate date = LocalDate.of(2024, 1, 15);
-        when(rateRepo.findLatestBetween(any(), any())).thenReturn(Optional.empty());
-        when(fixerProvider.getRates(date)).thenReturn(Map.of("USD", new BigDecimal("1.1")));
+        when(historyRepo.findLatestBetween(any(), any())).thenReturn(Optional.empty());
+        when(fixerProvider.getRates(date)).thenReturn(new ProviderRates(BASE, Map.of("USD", new BigDecimal("1.1"))));
 
         mockMvc.perform(get("/api/v1/rates/2024-01-15"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.base").value(BASE))
             .andExpect(jsonPath("$.rates.USD").value(1.1));
 
         verify(fixerProvider).getRates(date);
         verify(rateRepo).saveAll(anyList());
-        verify(historyRepo).save(argThat(hist -> hist.getSuccess()));
+        verify(historyRepo).save(argThat(hist -> hist.getSuccess() && BASE.equals(hist.getBase())));
     }
 
     @Test
@@ -85,11 +90,20 @@ class RatesTest extends BaseTest {
 
     @Test
     void getRates_nothingCached_returnsNotFound() throws Exception {
-        when(rateRepo.findLatest()).thenReturn(Optional.empty());
+        when(historyRepo.findLatest()).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/v1/rates"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.success").value(false));
+    }
+
+    private static RatesUpdateHistEntity snapshot() {
+        return RatesUpdateHistEntity.builder()
+            .success(true)
+            .base(BASE)
+            .at(AT)
+            .timestamp(AT)
+            .build();
     }
 
     private static RateEntity rate(String code, String rate) {

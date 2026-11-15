@@ -1,7 +1,7 @@
 package com.shipmonk.testingday.controller;
 
-import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
@@ -66,7 +66,8 @@ abstract class BaseTest {
     @BeforeEach
     void setUpBase() {
         mockMvc = webAppContextSetup(context).build();
-        clearInvocations(historyRepo);
+        reset(historyRepo);
+        stubLastSuccessfulUpdate(historyRepo);
 
         when(fixerProvider.getName()).thenReturn(PROVIDER_NAME);
         when(providerRepo.countActive(PROVIDER_NAME)).thenReturn(1L);
@@ -79,16 +80,20 @@ abstract class BaseTest {
         @Bean
         RatesUpdateHistRepo historyRepo() {
             RatesUpdateHistRepo repo = mock(RatesUpdateHistRepo.class);
-            RatesUpdateHistEntity lastUpdate = RatesUpdateHistEntity.builder()
-                .success(true)
-                .at(LocalDateTime.now())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-            when(repo.findLatestByTimestamp()).thenReturn(Optional.of(lastUpdate));
+            stubLastSuccessfulUpdate(repo);
             return repo;
         }
 
+    }
+
+    static void stubLastSuccessfulUpdate(RatesUpdateHistRepo repo) {
+        RatesUpdateHistEntity lastUpdate = RatesUpdateHistEntity.builder()
+            .success(true)
+            .at(LocalDateTime.now())
+            .timestamp(LocalDateTime.now())
+            .build();
+
+        when(repo.findLatestByTimestamp()).thenReturn(Optional.of(lastUpdate));
     }
 
     static RatesProviderEntity provider(boolean active) {

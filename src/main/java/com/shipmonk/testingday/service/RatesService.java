@@ -5,9 +5,7 @@ import static com.shipmonk.testingday.utils.CurrencyCodes.filterCodes;
 import static com.shipmonk.testingday.utils.ExceptionUtils.isUniqueViolation;
 import static java.time.format.DateTimeFormatter.ofPattern;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -51,17 +49,11 @@ public class RatesService {
         }
     }
 
-    public Map<String, BigDecimal> getRates(String codes) {
-        Map<String, BigDecimal> rates = ratesStore.findLatest(CurrencyCodes.parse(codes));
-
-        if (rates.isEmpty()) {
-            throw new RatesNotFoundException();
-        }
-
-        return rates;
+    public RatesSnapshot getRates(String codes) {
+        return requireRates(ratesStore.findLatest(CurrencyCodes.parse(codes)));
     }
 
-    public Map<String, BigDecimal> getRatesForDate(LocalDate date, String codes) {
+    public RatesSnapshot getRatesForDate(LocalDate date, String codes) {
         if (date.isAfter(LocalDate.now())) {
             throw new MalformedRequestException(
                 "Requested date [%s] cannot point in future".formatted(date.format(ofPattern(DATE_FORMAT)))
@@ -76,7 +68,7 @@ public class RatesService {
         }
 
         Set<String> parsedCodes = CurrencyCodes.parse(codes);
-        Optional<Map<String, BigDecimal>> cachedRates = ratesStore.findForDate(date, parsedCodes);
+        Optional<RatesSnapshot> cachedRates = ratesStore.findForDate(date, parsedCodes);
 
         if (cachedRates.isPresent()) {
             return requireRates(cachedRates.get());
@@ -90,15 +82,17 @@ public class RatesService {
             return requireRates(cachedRates.get());
         }
 
-        return requireRates(filterCodes(fetchAndStoreForDate(date), parsedCodes));
+        FetchedRates fetched = fetchAndStoreForDate(date);
+
+        return requireRates(new RatesSnapshot(fetched.base(), filterCodes(fetched.rates(), parsedCodes)));
     }
 
-    private Map<String, BigDecimal> requireRates(Map<String, BigDecimal> rates) {
-        if (rates.isEmpty()) {
+    private RatesSnapshot requireRates(RatesSnapshot snapshot) {
+        if (snapshot.rates().isEmpty()) {
             throw new RatesNotFoundException();
         }
 
-        return rates;
+        return snapshot;
     }
 
     public void updateRates() {
@@ -107,26 +101,19 @@ public class RatesService {
             return;
         }
 
-        storeRates(ratesFetcher.fetchLatest(), null);
+        ratesFetcher.fetchLatest().ifPresent(fetched -> storeRates(fetched, null));
     }
 
-    private Map<String, BigDecimal> fetchAndStoreForDate(LocalDate date) {
-        Optional<FetchedRates> fetched = ratesFetcher.fetchForDate(date);
-
-        if (fetched.isEmpty()) {
-            throw new RatesProvidersUnavailableException(date);
-        }
+    private FetchedRates fetchAndStoreForDate(LocalDate date) {
+        FetchedRates fetched = ratesFetcher.fetchForDate(date)
+            .orElseThrow(() -> new RatesProvidersUnavailableException(date));
 
         return storeRates(fetched, date);
     }
 
-    private Map<String, BigDecimal> storeRates(Optional<FetchedRates> fetched, LocalDate date) {
-        if (fetched.isEmpty()) {
-            return Map.of();
-        }
-
+    private FetchedRates storeRates(FetchedRates fetched, LocalDate date) {
         try {
-            ratesStore.save(fetched.get(), date);
+            ratesStore.save(fetched, date);
         } catch (DataIntegrityViolationException e) {
             if (!isUniqueViolation(e)) {
                 throw e;
@@ -135,7 +122,7 @@ public class RatesService {
             log.debug("Fetched rates for [{}] already exist", date, e);
         }
 
-        return fetched.get().rates();
+        return fetched;
     }
 
 }

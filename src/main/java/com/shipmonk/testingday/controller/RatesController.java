@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.shipmonk.testingday.model.Response;
 import com.shipmonk.testingday.service.RatesService;
+import com.shipmonk.testingday.service.RatesSnapshot;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,7 +29,7 @@ public class RatesController {
     public Response getRates(
         @RequestParam(value = "codes", required = false) String codes
     ) {
-        return makeResponse().rates(ratesService.getRates(codes)).build();
+        return toResponse(ratesService.getRates(codes));
     }
 
     @GetMapping("/{date}")
@@ -36,13 +37,16 @@ public class RatesController {
         @PathVariable("date") @DateTimeFormat(pattern = DATE_FORMAT) LocalDate date,
         @RequestParam(value = "codes", required = false) String codes
     ) {
-        return makeResponse().rates(ratesService.getRatesForDate(date, codes)).build();
+        return toResponse(ratesService.getRatesForDate(date, codes));
     }
 
-    private Response.ResponseBuilder makeResponse() {
+    private Response toResponse(RatesSnapshot snapshot) {
         return Response.builder()
             .success(true)
-            .timestamp(LocalDateTime.now());
+            .timestamp(LocalDateTime.now())
+            .base(snapshot.base())
+            .rates(snapshot.rates())
+            .build();
     }
 
 }

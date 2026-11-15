@@ -7,19 +7,18 @@ import static java.time.Duration.ofSeconds;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.shipmonk.testingday.exceptions.ProviderRateException;
+import com.shipmonk.testingday.providers.api.ProviderRates;
 import com.shipmonk.testingday.providers.api.RatesProvider;
 import com.shipmonk.testingday.providers.fixer.model.FixerResponse;
 
@@ -64,18 +63,18 @@ public class FixerProvider implements RatesProvider {
     }
 
     @Override
-    public Map<String, BigDecimal> getRates() throws ProviderRateException {
+    public ProviderRates getRates() throws ProviderRateException {
         HttpRequest request = newBuilder()
             .uri(create("%s?access_key=%s&base=%s".formatted(fixerRatesLatestUrl, fixerApiKey, fixerBaseCurrency)))
             .timeout(ofSeconds(readTimeout))
             .build();
 
         log.debug("Provider [{}] fetching latest rates at [{}]", getName(), fixerRatesDateUrl);
-        return execRequest(request).getRates();
+        return toProviderRates(execRequest(request));
     }
 
     @Override
-    public Map<String, BigDecimal> getRates(LocalDate date) throws ProviderRateException {
+    public ProviderRates getRates(LocalDate date) throws ProviderRateException {
         HttpRequest request = newBuilder()
             .uri(create("%s/%s?access_key=%s&base=%s".formatted(
                 fixerRatesDateUrl,
@@ -87,7 +86,11 @@ public class FixerProvider implements RatesProvider {
             .build();
 
         log.debug("Provider [{}] fetching rates for [{}] at [{}]", getName(), date, fixerRatesDateUrl);
-        return execRequest(request).getRates();
+        return toProviderRates(execRequest(request));
+    }
+
+    private ProviderRates toProviderRates(FixerResponse response) {
+        return new ProviderRates(response.getBase(), response.getRates());
     }
 
     private FixerResponse execRequest(HttpRequest request) {

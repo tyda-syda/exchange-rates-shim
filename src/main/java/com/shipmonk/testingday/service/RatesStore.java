@@ -1,10 +1,8 @@
 package com.shipmonk.testingday.service;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,9 +12,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.shipmonk.testingday.entity.RateEntity;
+import com.shipmonk.testingday.entity.RatesUpdateHistEntity;
 import com.shipmonk.testingday.events.RatesUpdateDoneEvent;
 import com.shipmonk.testingday.exceptions.RatesNotFoundException;
 import com.shipmonk.testingday.repo.RateRepo;
+import com.shipmonk.testingday.repo.RatesUpdateHistRepo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,18 +25,17 @@ import lombok.RequiredArgsConstructor;
 public class RatesStore {
 
     private final RateRepo rateRepo;
-    private final RatesUpdateHistoryService updateHistory;
+    private final RatesUpdateHistRepo histRepo;
+    private final RatesUpdateHistoryService updatesHistService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public Map<String, BigDecimal> findLatest(Set<String> codes) {
-        RateEntity latest = rateRepo.findLatest().orElseThrow(RatesNotFoundException::new);
-
-        return findRatesAt(latest.getAt(), codes);
+    public RatesSnapshot findLatest(Set<String> codes) {
+        return findRatesAt(histRepo.findLatest().orElseThrow(RatesNotFoundException::new), codes);
     }
 
-    public Optional<Map<String, BigDecimal>> findForDate(LocalDate date, Set<String> codes) {
-        return rateRepo.findLatestBetween(date.atStartOfDay(), date.plusDays(1).atStartOfDay())
-            .map(latest -> findRatesAt(latest.getAt(), codes));
+    public Optional<RatesSnapshot> findForDate(LocalDate date, Set<String> codes) {
+        return histRepo.findLatestBetween(date.atStartOfDay(), date.plusDays(1).atStartOfDay())
+            .map(latest -> findRatesAt(latest, codes));
     }
 
     @Transactional
@@ -59,13 +58,18 @@ public class RatesStore {
             .toList();
 
         rateRepo.saveAll(newRates);
-        updateHistory.saveHistSuccess(fetched.providerName(), at, now);
+        updatesHistService.saveHistSuccess(fetched.providerName(), fetched.base(), at, now);
     }
 
-    private Map<String, BigDecimal> findRatesAt(LocalDateTime at, Set<String> codes) {
-        List<RateEntity> rates = codes.isEmpty() ? rateRepo.findAllByAt(at) : rateRepo.findAllByAt(at, codes);
+    private RatesSnapshot findRatesAt(RatesUpdateHistEntity hist, Set<String> codes) {
+        List<RateEntity> rates = codes.isEmpty() ?
+            rateRepo.findAllByAt(hist.getAt()) :
+            rateRepo.findAllByAt(hist.getAt(), codes);
 
-        return rates.stream().collect(Collectors.toMap(RateEntity::getCode, RateEntity::getRate));
+        return new RatesSnapshot(
+            hist.getBase(),
+            rates.stream().collect(Collectors.toMap(RateEntity::getCode, RateEntity::getRate))
+        );
     }
 
 }

@@ -1,13 +1,12 @@
 package com.shipmonk.testingday.service;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
 import org.springframework.stereotype.Component;
 
+import com.shipmonk.testingday.providers.api.ProviderRates;
 import com.shipmonk.testingday.providers.api.RatesProvider;
 
 import lombok.RequiredArgsConstructor;
@@ -29,14 +28,14 @@ public class RatesFetcher {
         return fetch(provider -> provider.getRates(date));
     }
 
-    private Optional<FetchedRates> fetch(Function<RatesProvider, Map<String, BigDecimal>> callback) {
+    private Optional<FetchedRates> fetch(Function<RatesProvider, ProviderRates> callback) {
         for (RatesProvider provider : providerService.getActiveProviders()) {
             try {
                 log.info("Fetching rates via [{}]", provider.getName());
-                Map<String, BigDecimal> rates = callback.apply(provider);
+                ProviderRates rates = callback.apply(provider);
                 log.info("Fetched new rates via [{}]", provider.getName());
 
-                return Optional.of(new FetchedRates(provider.getName(), rates));
+                return Optional.of(new FetchedRates(provider.getName(), rates.base(), rates.rates()));
             } catch (Exception e) {
                 log.error("Fetching rates failed [{}]", provider.getName(), e);
                 saveFail(provider, e);
