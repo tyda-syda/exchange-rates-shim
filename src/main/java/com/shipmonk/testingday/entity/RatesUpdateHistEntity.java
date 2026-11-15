@@ -43,4 +43,7 @@ public class RatesUpdateHistEntity {
     @Column(length = 3)
     private String base;
 
+    @Column(columnDefinition = "TEXT")
+    private String message;
+
 }

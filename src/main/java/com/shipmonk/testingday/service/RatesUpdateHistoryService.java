@@ -43,20 +43,22 @@ public class RatesUpdateHistoryService {
     @Transactional
     public void saveHistFail(String providerName, Exception cause) {
         LocalDateTime now = LocalDateTime.now();
+        String message = cause.getMessage();
 
-        historyRepo.save(
-            RatesUpdateHistEntity.builder()
-                .provider(providerService.getProviderEntity(providerName))
-                .success(false)
-                .at(now)
-                .timestamp(now)
-                .build()
-        );
         eventsPublisher.publish(
             EventType.RATES_PROVIDER_FAIL,
             RatesProviderEvent.builder()
                 .providerName(providerName)
-                .message(cause.getMessage())
+                .message(message)
+                .build()
+        );
+        historyRepo.save(
+            RatesUpdateHistEntity.builder()
+                .provider(providerService.getProviderEntity(providerName))
+                .success(false)
+                .message(message)
+                .at(now)
+                .timestamp(now)
                 .build()
         );
     }

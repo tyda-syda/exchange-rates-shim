@@ -93,6 +93,9 @@ databaseChangeLog:
               - column:
                   name: base
                   type: VARCHAR(3)
+              - column:
+                  name: message
+                  type: TEXT
 
   - changeSet:
       id: 4
