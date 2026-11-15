@@ -2,7 +2,6 @@ databaseChangeLog:
   - changeSet:
       id: 1
       author: oo
-      runOnChange: true
       changes:
         - createTable:
             tableName: exchange_rate_providers
@@ -60,7 +59,6 @@ databaseChangeLog:
   - changeSet:
       id: 3
       author: oo
-      runOnChange: true
       changes:
         - createTable:
             tableName: rate_update_history
@@ -101,3 +99,33 @@ databaseChangeLog:
             tableName: exchange_rates
             constraintName: uq_exchange_rates_at_code
             columnNames: 'at, code'
+
+  - changeSet:
+      id: 5
+      author: oo
+      changes:
+        - createTable:
+            tableName: rates_update_queue
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: at
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timestamp
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: done
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_rates_update_queue_at_in_progress ON rates_update_queue (at) WHERE done = false

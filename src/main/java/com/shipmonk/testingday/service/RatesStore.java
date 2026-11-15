@@ -9,10 +9,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.shipmonk.testingday.entity.RateEntity;
+import com.shipmonk.testingday.events.RatesUpdateDoneEvent;
 import com.shipmonk.testingday.exceptions.RatesNotFoundException;
 import com.shipmonk.testingday.repo.RateRepo;
 
@@ -24,6 +26,7 @@ public class RatesStore {
 
     private final RateRepo rateRepo;
     private final RatesUpdateHistoryService updateHistory;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Map<String, BigDecimal> findLatest(Set<String> codes) {
         RateEntity latest = rateRepo.findLatest().orElseThrow(RatesNotFoundException::new);
@@ -38,6 +41,11 @@ public class RatesStore {
 
     @Transactional
     public void save(FetchedRates fetched, LocalDate date) {
+        // only updates for a specific date must be queued
+        if (date != null) {
+            eventPublisher.publishEvent(new RatesUpdateDoneEvent(date));
+        }
+
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime at = date == null ? now : date.atTime(now.toLocalTime());
         List<RateEntity> newRates = fetched.rates().entrySet().stream()

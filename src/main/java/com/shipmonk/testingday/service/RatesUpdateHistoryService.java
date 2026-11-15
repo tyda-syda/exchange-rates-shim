@@ -5,7 +5,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +23,6 @@ public class RatesUpdateHistoryService {
     private final RatesUpdateHistRepo historyRepo;
     private final RatesProviderService providerService;
     private final EventsPublisher eventsPublisher;
-    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Value("#{${exchange.rates.min-interval-rates-update-sec:60*60*12}}")
     private Long minIntervalRatesUpdate;

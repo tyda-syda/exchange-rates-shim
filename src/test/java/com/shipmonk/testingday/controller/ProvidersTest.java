@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import com.shipmonk.testingday.events.api.EventType;
 
-class ProvidersBaseTest extends BaseTest {
+class ProvidersTest extends BaseTest {
 
     @Test
     void getAllProviders_returnsRegisteredProviders() throws Exception {

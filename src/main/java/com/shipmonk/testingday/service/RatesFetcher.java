@@ -29,11 +29,11 @@ public class RatesFetcher {
         return fetch(provider -> provider.getRates(date));
     }
 
-    private Optional<FetchedRates> fetch(Function<RatesProvider, Map<String, BigDecimal>> call) {
+    private Optional<FetchedRates> fetch(Function<RatesProvider, Map<String, BigDecimal>> callback) {
         for (RatesProvider provider : providerService.getActiveProviders()) {
             try {
                 log.info("Fetching rates via [{}]", provider.getName());
-                Map<String, BigDecimal> rates = call.apply(provider);
+                Map<String, BigDecimal> rates = callback.apply(provider);
                 log.info("Fetched new rates via [{}]", provider.getName());
 
                 return Optional.of(new FetchedRates(provider.getName(), rates));

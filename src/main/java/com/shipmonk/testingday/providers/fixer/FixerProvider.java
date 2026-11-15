@@ -3,6 +3,7 @@ package com.shipmonk.testingday.providers.fixer;
 import static com.shipmonk.testingday.utils.Consts.DATE_FORMAT;
 import static java.net.URI.create;
 import static java.net.http.HttpRequest.newBuilder;
+import static java.time.Duration.ofSeconds;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +12,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -33,12 +33,15 @@ public class FixerProvider implements RatesProvider {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
+    @Value("${exchange.rates.providers.http-timeout-sec.read:5}")
+    private int readTimeout;
+
     public FixerProvider(
-        @Value("${exchange.rates.providers.http-timeout-sec:1}") String httpTimeout,
+        @Value("${exchange.rates.providers.http-timeout-sec.connect:1}") int connectTimeout,
         ObjectMapper objectMapper
     ) {
         this.httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(Integer.parseInt(httpTimeout)))
+            .connectTimeout(ofSeconds(connectTimeout))
             .build();
         this.objectMapper = objectMapper;
     }
@@ -64,6 +67,7 @@ public class FixerProvider implements RatesProvider {
     public Map<String, BigDecimal> getRates() throws ProviderRateException {
         HttpRequest request = newBuilder()
             .uri(create("%s?access_key=%s&base=%s".formatted(fixerRatesLatestUrl, fixerApiKey, fixerBaseCurrency)))
+            .timeout(ofSeconds(readTimeout))
             .build();
 
         log.debug("Provider [{}] fetching latest rates at [{}]", getName(), fixerRatesDateUrl);
@@ -79,6 +83,7 @@ public class FixerProvider implements RatesProvider {
                 fixerApiKey,
                 fixerBaseCurrency
             )))
+            .timeout(ofSeconds(readTimeout))
             .build();
 
         log.debug("Provider [{}] fetching rates for [{}] at [{}]", getName(), date, fixerRatesDateUrl);

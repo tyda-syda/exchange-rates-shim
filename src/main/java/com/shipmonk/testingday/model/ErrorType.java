@@ -11,6 +11,8 @@ import lombok.ToString;
 public enum ErrorType {
 
     INTERNAL(0, "internal_error"),
+    RATES_UPDATE_IN_PROGRESS(102, "rates_update_in_progress"),
+    RATES_PROVIDERS_UNAVAILABLE(103, "rates_providers_unavailable"),
     BAD_REQUEST(101, "bad_request");
 
     final int code;

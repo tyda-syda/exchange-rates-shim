@@ -16,7 +16,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.shipmonk.testingday.entity.RatesProviderEntity;
@@ -26,6 +25,7 @@ import com.shipmonk.testingday.providers.fixer.FixerProvider;
 import com.shipmonk.testingday.repo.RateRepo;
 import com.shipmonk.testingday.repo.RatesProviderRepo;
 import com.shipmonk.testingday.repo.RatesUpdateHistRepo;
+import com.shipmonk.testingday.repo.RatesUpdateQueueRepo;
 
 @SpringBootTest(properties = {
     "spring.autoconfigure.exclude="
@@ -48,6 +48,9 @@ abstract class BaseTest {
 
     @MockitoBean
     RatesProviderRepo providerRepo;
+
+    @MockitoBean
+    RatesUpdateQueueRepo queueRepo;
 
     @MockitoBean
     FixerProvider fixerProvider;

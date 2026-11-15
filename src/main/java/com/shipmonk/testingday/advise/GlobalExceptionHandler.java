@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -30,6 +31,8 @@ import com.shipmonk.testingday.exceptions.MalformedRequestException;
 import com.shipmonk.testingday.exceptions.ProviderRateException;
 import com.shipmonk.testingday.exceptions.ProviderRateNotFoundException;
 import com.shipmonk.testingday.exceptions.RatesNotFoundException;
+import com.shipmonk.testingday.exceptions.RatesProvidersUnavailableException;
+import com.shipmonk.testingday.exceptions.RatesUpdateInProgressException;
 import com.shipmonk.testingday.model.ErrorResponse;
 import com.shipmonk.testingday.model.ErrorType;
 import com.shipmonk.testingday.model.Response;
@@ -40,6 +43,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @Value("${exchange.rates.update-queue.http-resp-retry-after-sec:5}")
+    private long retryAfterSec;
 
     @ExceptionHandler(DateTimeParseException.class)
     public ResponseEntity<Response> handleDateTimeParse(DateTimeParseException ex) {
@@ -66,6 +72,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
     }
 
+    @ExceptionHandler(RatesProvidersUnavailableException.class)
+    public ResponseEntity<Response> handleRatesProvidersUnavailable(RatesProvidersUnavailableException ex) {
+        return respond(HttpStatus.BAD_GATEWAY, ex.getMessage(), ex, ErrorType.RATES_PROVIDERS_UNAVAILABLE);
+    }
+
     @ExceptionHandler(ProviderRateException.class)
     public ResponseEntity<Response> handleProviderRate(ProviderRateException ex) {
         return respond(
@@ -84,6 +95,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             ex,
             ErrorType.INTERNAL
         );
+    }
+
+    @ExceptionHandler(RatesUpdateInProgressException.class)
+    public ResponseEntity<Response> handleRatesUpdateInProgressException(RatesUpdateInProgressException ex) {
+        logError(HttpStatus.SERVICE_UNAVAILABLE, ex);
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSec))
+            .body(buildResponse(ex.getMessage(), ErrorType.RATES_UPDATE_IN_PROGRESS));
     }
 
     @ExceptionHandler(Throwable.class)

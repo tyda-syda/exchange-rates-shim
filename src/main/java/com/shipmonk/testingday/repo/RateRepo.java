@@ -21,7 +21,7 @@ public interface RateRepo extends JpaRepository<RateEntity, UUID> {
     @Query("FROM RateEntity WHERE at = :at AND code IN (:codes)")
     List<RateEntity> findAllByAt(LocalDateTime at, Collection<String> codes);
 
-    @Query("FROM RateEntity WHERE at BETWEEN :start AND :end ORDER BY at DESC LIMIT 1")
+    @Query("FROM RateEntity WHERE at >= :start AND at < :end ORDER BY at DESC LIMIT 1")
     Optional<RateEntity> findLatestBetween(LocalDateTime start, LocalDateTime end);
 
 }

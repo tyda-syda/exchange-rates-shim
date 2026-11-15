@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import com.shipmonk.testingday.entity.RateEntity;
 
-class RatesBaseTest extends BaseTest {
+class RatesTest extends BaseTest {
 
     private static final LocalDateTime AT = LocalDateTime.of(2024, 1, 15, 10, 0);
 

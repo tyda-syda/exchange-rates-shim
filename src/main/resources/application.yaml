@@ -19,13 +19,20 @@ spring:
 
 exchange:
   rates:
+    earliest-allowed-date: '1999-01-01'
     events:
       type: kafka
       kafka:
         rates-provider-topic: rates-provider-events
     update-cron: '0 0 0 * * ?' # 12 AM every day
+    update-queue-cleanup-cron: '0/10 * * * * ?' # every 10 seconds
+    update-queue:
+      max-queue-lease-sec: 30
+      http-resp-retry-after-sec: 5
     providers:
-      http-timeout-sec: 5
+      http-timeout-sec:
+        connect: 3
+        read: 15
       fixer:
         latest-url: https://data.fixer.io/api/latest
         date-url: https://data.fixer.io/api
