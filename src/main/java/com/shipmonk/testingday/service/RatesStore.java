@@ -39,7 +39,7 @@ public class RatesStore {
     }
 
     @Transactional
-    public void save(FetchedRates fetched, LocalDate date) {
+    public FetchedRates save(FetchedRates fetched, LocalDate date) {
         // only updates for a specific date must be queued
         if (date != null) {
             eventPublisher.publishEvent(new RatesUpdateDoneEvent(date));
@@ -59,6 +59,8 @@ public class RatesStore {
 
         rateRepo.saveAll(newRates);
         updatesHistService.saveHistSuccess(fetched.providerName(), fetched.base(), at, now);
+
+        return fetched;
     }
 
     private RatesSnapshot findRatesAt(RatesUpdateHistEntity hist, Set<String> codes) {

@@ -80,9 +80,16 @@ public class RatesService {
             return requireRates(cachedRates.get());
         }
 
-        FetchedRates fetched = fetchAndStoreForDate(date);
+        Optional<FetchedRates> fetched = ratesFetcher.fetchForDate(date);
 
-        return requireRates(new RatesSnapshot(fetched.base(), filterCodes(fetched.rates(), parsedCodes)));
+        if (fetched.isEmpty()) {
+            queueService.leaveQueue(date);
+            throw new RatesProvidersUnavailableException(date);
+        }
+
+        FetchedRates savedRates = ratesStore.save(fetched.get(), date);
+
+        return requireRates(new RatesSnapshot(savedRates.base(), filterCodes(savedRates.rates(), parsedCodes)));
     }
 
     private RatesSnapshot requireRates(RatesSnapshot snapshot) {
@@ -100,15 +107,6 @@ public class RatesService {
         }
 
         ratesFetcher.fetchLatest().ifPresent(fetched -> ratesStore.save(fetched, null));
-    }
-
-    private FetchedRates fetchAndStoreForDate(LocalDate date) {
-        FetchedRates fetched = ratesFetcher.fetchForDate(date)
-            .orElseThrow(() -> new RatesProvidersUnavailableException(date));
-
-        ratesStore.save(fetched, date);
-
-        return fetched;
     }
 
 }
