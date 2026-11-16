@@ -39,6 +39,16 @@ public class ProvidersController {
             .build();
     }
 
+    @PutMapping("/{name}/priority/{priority}")
+    public Response updatePriority(
+        @PathVariable("name") String name,
+        @PathVariable("priority") int priority
+    ) {
+        return makeResponse()
+            .providers(List.of(providerService.updatePriority(name, priority)))
+            .build();
+    }
+
     private Response.ResponseBuilder makeResponse() {
         return Response.builder()
             .timestamp(System.currentTimeMillis())

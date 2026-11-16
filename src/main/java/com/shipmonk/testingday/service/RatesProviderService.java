@@ -1,8 +1,9 @@
 package com.shipmonk.testingday.service;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -12,31 +13,45 @@ import com.shipmonk.testingday.entity.RatesProviderEntity;
 import com.shipmonk.testingday.events.RatesProviderEvent;
 import com.shipmonk.testingday.events.api.EventType;
 import com.shipmonk.testingday.events.api.EventsPublisher;
+import com.shipmonk.testingday.exceptions.MalformedRequestException;
 import com.shipmonk.testingday.exceptions.ProviderRateNotFoundException;
+import com.shipmonk.testingday.exceptions.RatesProvidersUnavailableException;
 import com.shipmonk.testingday.model.ProviderResponse;
 import com.shipmonk.testingday.providers.api.RatesProvider;
 import com.shipmonk.testingday.repo.RatesProviderRepo;
 
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service("ratesProviderService")
-@RequiredArgsConstructor
 public class RatesProviderService {
 
     private final RatesProviderRepo providerRepo;
-    private final List<RatesProvider> providers;
+    private final Map<String, RatesProvider> providers;
     private final EventsPublisher eventsPublisher;
+
+    public RatesProviderService(
+        RatesProviderRepo providerRepo,
+        List<RatesProvider> providers,
+        EventsPublisher eventsPublisher
+    ) {
+        this.providers = providers.stream()
+            .collect(Collectors.toMap(RatesProvider::getName, Function.identity()));
+        this.providerRepo = providerRepo;
+        this.eventsPublisher = eventsPublisher;
+    }
 
     @PostConstruct
     private void init() {
-        List<String> providerNames = providers.stream().map(RatesProvider::getName).toList();
-        Set<String> existingProviders = providerRepo.findAllByNameIn(providerNames).stream()
+        if (providers.isEmpty()) {
+            throw new RatesProvidersUnavailableException();
+        }
+
+        Set<String> existingProviders = providerRepo.findAllByNameIn(this.providers.keySet()).stream()
             .map(RatesProviderEntity::getName)
             .collect(Collectors.toSet());
-        List<RatesProviderEntity> newProviders = providers.stream()
+        List<RatesProviderEntity> newProviders = providers.values().stream()
             .filter(provider -> !existingProviders.contains(provider.getName()))
             .map(provider -> RatesProviderEntity.builder()
                 .name(provider.getName())
@@ -52,25 +67,18 @@ public class RatesProviderService {
 
     public List<ProviderResponse> getProviders() {
         return providerRepo.findAll().stream()
-            .map(entity ->
-                ProviderResponse.builder()
-                    .name(entity.getName())
-                    .priority(entity.getPriority())
-                    .active(entity.getActive())
-                    .build()
-            )
+            .map(RatesProviderService::toResponse)
             .toList();
     }
 
-    public RatesProviderEntity getProviderEntity(String name) {
+    public RatesProviderEntity getProvider(String name) {
         return providerRepo.findByName(name)
             .orElseThrow(() -> new ProviderRateNotFoundException(name));
     }
 
     public List<RatesProvider> getActiveProviders() {
-        return providers.stream()
-            .filter(provider -> providerRepo.countActive(provider.getName()) > 0)
-            .sorted(Comparator.comparingInt(RatesProvider::getPriority))
+        return providerRepo.findAllActive(providers.keySet()).stream()
+            .map(entity -> providers.get(entity.getName()))
             .toList();
     }
 
@@ -93,8 +101,27 @@ public class RatesProviderService {
             );
         }
 
+        return toResponse(provider);
+    }
+
+    @Transactional
+    public ProviderResponse updatePriority(String name, int priority) {
+        if (priority < 0) {
+            throw new MalformedRequestException("Provider priority must not be negative, got [%d]".formatted(priority));
+        }
+
+        RatesProviderEntity provider = providerRepo.findByName(name)
+            .orElseThrow(() -> new ProviderRateNotFoundException(name));
+
+        log.info("Provider [{}] priority updated, [{}] -> [{}]", name, provider.getPriority(), priority);
+        provider.setPriority(priority);
+
+        return toResponse(provider);
+    }
+
+    private static ProviderResponse toResponse(RatesProviderEntity provider) {
         return ProviderResponse.builder()
-            .name(name)
+            .name(provider.getName())
             .active(provider.getActive())
             .priority(provider.getPriority())
             .build();

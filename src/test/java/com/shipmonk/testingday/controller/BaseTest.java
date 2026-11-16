@@ -1,11 +1,13 @@
 package com.shipmonk.testingday.controller;
 
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.convention.TestBean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
@@ -52,7 +55,7 @@ abstract class BaseTest {
     @MockitoBean
     RatesUpdateQueueRepo queueRepo;
 
-    @MockitoBean
+    @TestBean
     FixerProvider fixerProvider;
 
     @MockitoBean
@@ -66,11 +69,11 @@ abstract class BaseTest {
     @BeforeEach
     void setUpBase() {
         mockMvc = webAppContextSetup(context).build();
-        reset(historyRepo);
+        reset(historyRepo, fixerProvider);
         stubLastSuccessfulUpdate(historyRepo);
 
         when(fixerProvider.getName()).thenReturn(PROVIDER_NAME);
-        when(providerRepo.countActive(PROVIDER_NAME)).thenReturn(1L);
+        when(providerRepo.findAllActive(anyCollection())).thenReturn(List.of(provider(true)));
         when(providerRepo.findByName(PROVIDER_NAME)).thenReturn(Optional.of(provider(true)));
     }
 
@@ -84,6 +87,12 @@ abstract class BaseTest {
             return repo;
         }
 
+    }
+
+    static FixerProvider fixerProvider() {
+        FixerProvider provider = mock(FixerProvider.class);
+        when(provider.getName()).thenReturn(PROVIDER_NAME);
+        return provider;
     }
 
     static void stubLastSuccessfulUpdate(RatesUpdateHistRepo repo) {

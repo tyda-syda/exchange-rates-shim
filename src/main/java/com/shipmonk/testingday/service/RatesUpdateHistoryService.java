@@ -31,7 +31,7 @@ public class RatesUpdateHistoryService {
     public void saveHistSuccess(String providerName, String base, LocalDateTime at, LocalDateTime timestamp) {
         historyRepo.save(
             RatesUpdateHistEntity.builder()
-                .provider(providerService.getProviderEntity(providerName))
+                .provider(providerService.getProvider(providerName))
                 .success(true)
                 .base(base)
                 .at(at)
@@ -54,7 +54,7 @@ public class RatesUpdateHistoryService {
         );
         historyRepo.save(
             RatesUpdateHistEntity.builder()
-                .provider(providerService.getProviderEntity(providerName))
+                .provider(providerService.getProvider(providerName))
                 .success(false)
                 .message(message)
                 .at(now)

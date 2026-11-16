@@ -2,7 +2,6 @@ package com.shipmonk.testingday.service;
 
 import static com.shipmonk.testingday.utils.Consts.DATE_FORMAT;
 import static com.shipmonk.testingday.utils.CurrencyCodes.filterCodes;
-import static com.shipmonk.testingday.utils.ExceptionUtils.isUniqueViolation;
 import static java.time.format.DateTimeFormatter.ofPattern;
 
 import java.time.LocalDate;
@@ -10,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.shipmonk.testingday.exceptions.MalformedRequestException;
@@ -101,26 +99,14 @@ public class RatesService {
             return;
         }
 
-        ratesFetcher.fetchLatest().ifPresent(fetched -> storeRates(fetched, null));
+        ratesFetcher.fetchLatest().ifPresent(fetched -> ratesStore.save(fetched, null));
     }
 
     private FetchedRates fetchAndStoreForDate(LocalDate date) {
         FetchedRates fetched = ratesFetcher.fetchForDate(date)
             .orElseThrow(() -> new RatesProvidersUnavailableException(date));
 
-        return storeRates(fetched, date);
-    }
-
-    private FetchedRates storeRates(FetchedRates fetched, LocalDate date) {
-        try {
-            ratesStore.save(fetched, date);
-        } catch (DataIntegrityViolationException e) {
-            if (!isUniqueViolation(e)) {
-                throw e;
-            }
-
-            log.debug("Fetched rates for [{}] already exist", date, e);
-        }
+        ratesStore.save(fetched, date);
 
         return fetched;
     }

@@ -10,7 +10,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,13 +17,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Entity(name = "RateEntity")
-@Table(
-    name = "exchange_rates",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uq_exchange_rates_at_code",
-        columnNames = {"at", "code"}
-    )
-)
+@Table(name = "exchange_rates")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

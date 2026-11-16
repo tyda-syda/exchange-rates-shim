@@ -101,10 +101,14 @@ databaseChangeLog:
       id: 4
       author: oo
       changes:
-        - addUniqueConstraint:
+        - createIndex:
             tableName: exchange_rates
-            constraintName: uq_exchange_rates_at_code
-            columnNames: 'at, code'
+            indexName: idx_exchange_rates_at_code
+            columns:
+              - column:
+                  name: at
+              - column:
+                  name: code
 
   - changeSet:
       id: 5
