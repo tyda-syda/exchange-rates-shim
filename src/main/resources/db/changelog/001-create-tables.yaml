@@ -51,8 +51,8 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: at
-                  type: TIMESTAMP
+                  name: hist_id
+                  type: UUID
                   constraints:
                     nullable: false
 
@@ -101,12 +101,18 @@ databaseChangeLog:
       id: 4
       author: oo
       changes:
+        - addForeignKeyConstraint:
+            baseTableName: exchange_rates
+            baseColumnNames: hist_id
+            constraintName: fk_exchange_rates_hist
+            referencedTableName: rate_update_history
+            referencedColumnNames: id
         - createIndex:
             tableName: exchange_rates
-            indexName: idx_exchange_rates_at_code
+            indexName: idx_exchange_rates_hist_code
             columns:
               - column:
-                  name: at
+                  name: hist_id
               - column:
                   name: code
 

@@ -1,14 +1,15 @@
 package com.shipmonk.testingday.entity;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,7 +34,7 @@ public class RateEntity {
     @Column(nullable = false)
     private BigDecimal rate;
 
-    @Column(nullable = false)
-    private LocalDateTime at;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private RatesUpdateHistEntity hist;
 
 }

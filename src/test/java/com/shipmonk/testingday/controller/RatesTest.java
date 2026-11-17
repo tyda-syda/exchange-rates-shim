@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -32,7 +33,7 @@ class RatesTest extends BaseTest {
     @Test
     void getRates_returnsLatestCachedRates() throws Exception {
         when(historyRepo.findLatest()).thenReturn(Optional.of(snapshot()));
-        when(rateRepo.findAllByAt(AT)).thenReturn(List.of(rate("USD", "1.1"), rate("GBP", "0.85")));
+        when(rateRepo.findAllByHist(any())).thenReturn(List.of(rate("USD", "1.1"), rate("GBP", "0.85")));
 
         mockMvc.perform(get("/api/v1/rates"))
             .andExpect(status().isOk())
@@ -45,7 +46,7 @@ class RatesTest extends BaseTest {
     @Test
     void getRates_filtersByRequestedCodes() throws Exception {
         when(historyRepo.findLatest()).thenReturn(Optional.of(snapshot()));
-        when(rateRepo.findAllByAt(AT, Set.of("USD"))).thenReturn(List.of(rate("USD", "1.1")));
+        when(rateRepo.findAllByHistAndCodeIn(any(), eq(Set.of("USD")))).thenReturn(List.of(rate("USD", "1.1")));
 
         mockMvc.perform(get("/api/v1/rates").param("codes", "usd"))
             .andExpect(status().isOk())
@@ -110,7 +111,7 @@ class RatesTest extends BaseTest {
         return RateEntity.builder()
             .code(code)
             .rate(new BigDecimal(rate))
-            .at(AT)
+            .hist(snapshot())
             .build();
     }
 
